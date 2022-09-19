@@ -59,6 +59,7 @@ def setRarity():
     co = 0
     # Count rarity attributes and return value
     for filename in rarity_list:
+        # Rarity Names
         rc = "Rarity Common"
         ru = "Rarity Uncommon"
         rr = "Rarity Rare"
