@@ -1,0 +1,5 @@
+.env
+__pycache__
+assets
+marmalade_token_creation/txs
+marmalade_token_creation/kadena_repl_sandbox

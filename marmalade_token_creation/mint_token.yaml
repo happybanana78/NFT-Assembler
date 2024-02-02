@@ -1,0 +1,21 @@
+codeFile: /home/happybanana78/NFT-Assembler/marmalade_token_creation/create_token.pact
+dataFile: /home/happybanana78/NFT-Assembler/marmalade_token_creation/env_data.json
+publicMeta:
+  chainId: "{{chain}}"
+  sender: "{{gas-payer}}"
+  gasLimit: 5000
+  gasPrice: 0.00000001
+  ttl: 15000
+networkId: "{{network}}"
+signers:
+  - public: {{gas-payer-key}}
+    caps:
+      - name: "coin.GAS"
+        args: []
+  - public: {{creator-key}}
+    caps:
+      - name: "{{namespace}}.ledger.ENFORCE-RESERVED"
+        args: []
+      - name: "{{namespace}}.ledger.MINT"
+        args: [ "{{token-id}}", "{{creator-account}}", 1.0 ]
+type: exec

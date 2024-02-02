@@ -1,0 +1,8 @@
+namespace: n_442d3e11cfe0d39859878e5b1520cd8b8c36e5db
+chain: 1
+token-id: t:kqCCJfVRwix49dEdA16C3t2MS2RIaWHjRKMvQi2JKrY
+creator-key: d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f
+creator-account: k:d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f
+network: testnet04
+gas-payer: k:6586bd54f9dd0b8b27774454866366a77f774646ae8c4a1372d0f97bdd59541e
+gas-payer-key: 6586bd54f9dd0b8b27774454866366a77f774646ae8c4a1372d0f97bdd59541e

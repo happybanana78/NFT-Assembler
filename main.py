@@ -1,29 +1,42 @@
-from PIL import Image
+import os
 from os import listdir
-import random, json, hashlib, gc
+import subprocess
+from PIL import Image
+from dotenv import load_dotenv
+import random, json, gc, glob
 import sqlite3
 from sqlite3 import Error
+from ipfs import uploadImage, uploadMetadata
+from poll_transactions import pollTrx
 
-#Assets Path
+# Load .env file
+load_dotenv()
+
+# Backgrounds
 common_bg_path = "assets/background/Common"
 rare_bg_path = "assets/background/Rare"
 legendary_bg_path = "assets/background/Legendary"
 
+# Body
 common_body_path = "assets/body/Common"
 rare_body_path = "assets/body/Rare"
 legendary_body_path = "assets/body/Legendary"
 
+# Eyes
 common_eyes_path = "assets/eyes/Common"
 rare_eyes_path = "assets/eyes/Rare"
 legendary_eyes_path = "assets/eyes/Legendary"
 
+# Mouth
 common_mouth_path = "assets/mouth/Common"
 rare_mouth_path = "assets/mouth/Rare"
 legendary_mouth_path = "assets/mouth/Legendary"
 
+# Accessories
 rare_accessories_path = "assets/accessories/Rare"
 legendary_accessories_path = "assets/accessories/Legendary"
 
+# Head Accessories
 common_head_path = "assets/head/Common"
 rare_head_path = "assets/head/Rare"
 legendary_head_path = "assets/head/Legendary"
@@ -42,10 +55,10 @@ final_image_head = []
 rarity_list = []
 
 # Number of NFTs to generate
-n_copies = 10000
+n_copies = 3
 n_counter = 0
 
-#Database path
+# Database path
 database = "assets/output/store_list.db"
 
 def setRarity():
@@ -53,20 +66,23 @@ def setRarity():
     common = "common"
     rare = "rare"
     legendary = "legendary"
+
     # Define keyword counters
     leg = 0
     ra = 0
     co = 0
+
     # Count rarity attributes and return value
     for filename in rarity_list:
+
         # Rarity Names
-        rc = "Rarity Common"
-        ru = "Rarity Uncommon"
-        rr = "Rarity Rare"
-        re = "Rarity Epic"
-        rl = "Rarity Legendary"
-        rm = "Rarity Mythic"
-        rg = "Rarity God"
+        rc = "Common"
+        ru = "Uncommon"
+        rr = "Rare"
+        re = "Epic"
+        rl = "Legendary"
+        rm = "Mythic"
+        rg = "God"
         if legendary in filename or rare in filename or common in filename:
             co += filename.count(common)
             leg += filename.count(legendary)
@@ -153,9 +169,32 @@ def probability():
 
 def mainLoop():
     global n_counter, n_copies, rarity_list
+
+    # Delete all files in the metadata folder
+    files = glob.glob('assets/output/metadata/*')
+    for f in files:
+        if f != 'assets/output/metadata/.gitkeep':
+            os.remove(f)
+
+    # Delete all files in the txs folder
+    files = glob.glob('marmalade_token_creation/txs/*')
+    for f in files:
+        os.remove(f)
+
+    # Prepare status.json
+    with open("status.json", "w") as statusJsonFile:
+        statusJsonFile.write('{\n}')
+        statusJsonFile.close()
+
+    # Prepare cids.txt
+    with open("assets/output/cids.txt", "w") as cid_file:
+        cid_file.write('')
+        cid_file.close()
+
     while n_counter < n_copies:
         is_accessories = False
         is_head = False
+
         # Generate background
         while True:
             if prob_rare < probability() <= prob_common :
@@ -188,6 +227,7 @@ def mainLoop():
                 background_value = background_value_1.replace("_", " ")
                 rarity_list.append(background_value)
                 break
+
         # Generate body
         while True:
             if prob_rare < probability() <= prob_common :
@@ -220,6 +260,7 @@ def mainLoop():
                 body_value = body_value_1.replace("_", " ")
                 rarity_list.append(body_value)
                 break   
+
         # Generate eyes
         while True:
             if prob_rare < probability() <= prob_common :
@@ -252,6 +293,7 @@ def mainLoop():
                 eyes_value = eyes_value_1.replace("_", " ")
                 rarity_list.append(eyes_value)
                 break 
+
         # Generate mouth
         while True:
             if prob_rare < probability() <= prob_common :
@@ -284,6 +326,7 @@ def mainLoop():
                 mouth_value = mouth_value_1.replace("_", " ")
                 rarity_list.append(mouth_value)
                 break 
+
         # Generate Accessories
         if probability() <= prob_is_accessories:
             while True:
@@ -309,6 +352,7 @@ def mainLoop():
                     break 
         else:
             body_accessories_value = "None"
+
         # Generate head accessories
         if probability() <= prob_is_head:
             while True:
@@ -365,7 +409,7 @@ def mainLoop():
         if len(final_image_head) > 0:
             layer_head = Image.open(final_image_head[0])
             is_head = True
-
+            
         first_assembly = Image.alpha_composite(layer_background, layer_body)
         second_assembly = Image.alpha_composite(first_assembly, layer_eyes)
         third_assembly = Image.alpha_composite(second_assembly, layer_mouth)
@@ -395,38 +439,123 @@ def mainLoop():
             final_image.clear()
             final_image_accessories.clear()
             final_image_head.clear()
-        
+
+        # Upload image to IPFS
+        image_cid = uploadImage(f"assets/output/{n_counter}.png")
+
+        # Save image CID locally
+        with open("assets/output/cids.txt", "a") as cid_image_file:
+            cid_image_file.write(image_cid + "\n")
+            cid_image_file.close()
+                    
         # Metadata generation
         data = {
             "name": f"Bloob #{n_counter}",
-            "symbol": "BLB",
             "description": f"Bloob #{n_counter} is the #{n_counter} of 10000 unique slimy pets that are invading alursini's homes all around the Alursers Universe.",
-            "seller_fee_basis_points": 1000,
-            "creators": [
-                { "address": "9VFKANN2EndbK3RacjSLN7mUgKNPaJ8mhpRVNGXeUUm3", "share": 100 }
-            ],
-            "category": "image",
-            "attributes": [
-                { "trait_type": "Background", "value": background_value.title() },
-                { "trait_type": "Body", "value": body_value.title() },
-                { "trait_type": "Eyes", "value": eyes_value.title() },
-                { "trait_type": "Mouth", "value": mouth_value.title() },
-                { "trait_type": "Head Accessories", "value": head_accessories_value.title() },
-                { "trait_type": "Body Accessories", "value": body_accessories_value.title() },
-                { "trait_type": "Rarity", "value": setRarity() }
+            "image": f"ipfs://{image_cid}/{n_counter}.png",
+            "properties": { 
+                "background": background_value.title(), 
+                "body": body_value.title(),
+                "eyes": eyes_value.title(),
+                "mouth": mouth_value.title(),
+                "head_accessories": head_accessories_value.title(),
+                "body_accessories": body_accessories_value.title(),
+                "rarity": setRarity()
+            },
+            "external_url": "https://alursers.app/bloobs",
+            "authors": [
+                {
+                    "name": "Alursers",
+                }
             ],
             "collection": {
-                "name": "Alursini's Pets",
+                "name": "Bloobs",
                 "family": "Alursers Universe"
             }
-            }
+        }
         rarity_list.clear()
-        json_data = json.dumps(data)
-        uniqueHash = hashlib.sha256(json_data.encode("utf-8")).hexdigest()
-        data.update({"properties": { "dna": uniqueHash }})
         json_data = json.dumps(data)
         with open("assets/output/metadata/" + str(n_counter) + ".json", "w") as jsonFile:
             jsonFile.write(json_data)
             jsonFile.close()
+
+        # Upload metadata to IPFS
+        metadata_cid = uploadMetadata(f"assets/output/metadata/{n_counter}.json")
+
+        # Save metadata CID locally
+        with open("assets/output/cids.txt", "a") as cid_metadata_file:
+            cid_metadata_file.write(metadata_cid + "\n")
+            cid_metadata_file.close()
+
+        # Set metadata CID to the blockchain transaction
+        with open("marmalade_token_creation/env_data.json", "r") as file:
+            data = json.load(file)
+            data["metadata"] = 'ipfs://' + metadata_cid
+        with open("marmalade_token_creation/env_data.json", "w") as file:
+            json.dump(data, file)
+
+        # Generate blockchain transaction
+        generate_tx_command = [os.getenv('KDA_TOOL_PATH'), "gen", "-t", 'marmalade_token_creation/mint_token.yaml', '-d', 'marmalade_token_creation/data.yaml', '-o', f'marmalade_token_creation/txs/tx-{n_counter}.yaml']
+        process = subprocess.run(generate_tx_command, capture_output=True, text=True, check=True)
+
+        if process.returncode != 0:
+            print("Tx generation failed: ", process.stderr)
+        # else:
+        #     print("Tx generated!")
+
+        # Sign transaction
+        sign_tx_command = [os.getenv('KDA_TOOL_PATH'), "sign", "-k", "marmalade_token_creation/keys.txt", f'marmalade_token_creation/txs/tx-{n_counter}.yaml']
+        process = subprocess.run(sign_tx_command, capture_output=True, text=True, check=True)
+
+        if process.returncode != 0:
+            print("Tx signing failed: ", process.stderr)
+        # else:
+        #     print("Tx signed!")
+
+        # Update status.json
+        status_data = {
+            "status": "pending",
+            "message": f"Transaction {n_counter} pending",
+            "requestKey": None,
+        }
+
+        with open("status.json", "r") as file:
+            data = json.load(file)
+
+        data['tx-' + str(n_counter)] = status_data
+
+        with open("status.json", "w") as file:
+            json.dump(data, file, indent=4)
+
+    # Send transaction
+    txs_files = glob.glob("marmalade_token_creation/txs/tx-*.json")
+    send_txs_command = [os.getenv('KDA_TOOL_PATH'), "send"] + txs_files + ["-n", os.getenv('KADENA_NODE')]
+    process = subprocess.run(send_txs_command, capture_output=True, text=True, check=True)
+
+    if process.returncode != 0:
+        print("Txs sending failed: ", process.stderr)
+    else:
+        print("Txs sent!")
+
+    # Add the right requestKey to the status.json file
+    txs_status = json.loads(process.stdout)
+    requestKeys = []
+
+    for url, data_list in txs_status.items():
+        for item in data_list:
+            requestKeys = item['body']['requestKeys']
+
+    with open("status.json", "r") as file:
+        data = json.load(file)
+
+    for i in range(len(requestKeys)):
+        data['tx-' + str(i + 1)]['requestKey'] = requestKeys[i]
+
+    with open("status.json", "w") as file:
+        json.dump(data, file, indent=4)
+        jsonFile.close()
+
+    # Start polling transactions
+    pollTrx()
 
 mainLoop()

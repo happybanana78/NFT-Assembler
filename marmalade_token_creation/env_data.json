@@ -1,0 +1,32 @@
+{
+  "ks-happybanana78-01": {
+    "keys": [
+      "d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f"
+    ],
+    "pred": "keys-all"
+  },
+  "ks-owner-happybanana78-01": {
+    "keys": [
+      "d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f"
+    ],
+    "pred": "keys-all"
+  },
+  "marmalade_royalty": {
+    "creator_acct": "k:d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f",
+    "creator_guard": {
+      "pred": "keys-all",
+      "keys": [
+        "d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f"
+      ]
+    },
+    "rate": 0.05,
+    "currencies": [
+      {
+        "refName": { "namespace": null, "name": "coin" },
+        "refSpec": [{ "namespace": null, "name": "fungible-v2" }]
+      }
+    ]
+  },
+  "metadata": "ipfs://Qmcae5atsgcpgkogHXt3k3hGe1RLPNLEZNZxjrGhpVWHn6",
+  "owner_account": "k:d9c4e6d3d7f67f32cf8c63153563a842fd797cb9a4b40e2deedd3d78ef84c99f"
+}
